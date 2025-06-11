@@ -84,12 +84,12 @@ def load_node_model(model_path):
 
 def calculate_metrics(data):
     last_close = data['close'].iloc[-1]
-    prev_close = data['close'].iloc[0]
+    prev_close = data['close'].iloc[-2]
     change = last_close - prev_close
     pct_change = (change / prev_close) * 100
-    high = data['high'].max()
-    low = data['low'].min()
-    volume = data['volume'].sum()
+    high = data['high'].iloc[-1]
+    low = data['low'].iloc[-1]
+    volume = data['volume'].iloc[-1]
     return last_close, change, pct_change, high, low, volume
 
 def add_technical_indicators(data):

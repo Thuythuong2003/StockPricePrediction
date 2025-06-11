@@ -28,6 +28,17 @@ def evaluate_lstm(lstm_model, x_test, y_test, scaler):
 
     return rmse, mae, predict_test_price, actual_test_price
 
+def evaluate_arima(arima_model, test):
+    arima_predict = arima_model.predict(n_periods=len(test))
+
+    rmse = np.sqrt(mean_squared_error(test,arima_predict))
+    mae = mean_absolute_error(test, arima_predict)
+
+    predict_test_price = np.exp(arima_predict)
+    actual_test_price = np.exp(test)
+
+    return rmse, mae, predict_test_price, actual_test_price
+
 def compute_optimal_alpha(y_true, y_arima, y_gru):
     numerator = np.sum((y_arima - y_gru) * (y_true - y_gru))
     denominator = np.sum((y_arima - y_gru) ** 2)
