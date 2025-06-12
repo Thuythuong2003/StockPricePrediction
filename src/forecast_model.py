@@ -5,7 +5,6 @@ import numpy as np
 import torch
 import torch
 import torch.nn as nn
-from torchdiffeq import odeint
 
 __all__ = ['forecast_node', 'forecast_keras', 'forecast_arima', 'compute_optimal_alpha', 'forecast_arima_gru']
 
@@ -77,14 +76,14 @@ def forecast_arima_gru(gru_model, arima_model, x_test, y_test, test_scaled, scal
     alpha = compute_optimal_alpha(y_true, arima_pred, gru_pred)
 
     # Dự báo tương lai với GRU
-    last_10 = test_scaled[-10:]
-    gru_input = last_10.reshape(1, 10, 1)
+    last_60 = test_scaled[-60:]
+    gru_input = last_60.reshape(1, 60, 1)
     gru_forecast_10 = []
     input_seq = gru_input.copy()
     for _ in range(forecast_len):
         next_pred = gru_model.predict(input_seq, verbose=0)[0][0]
         gru_forecast_10.append(next_pred)
-        input_seq = np.append(input_seq[0, 1:, 0], next_pred).reshape(1, 10, 1)
+        input_seq = np.append(input_seq[0, 1:, 0], next_pred).reshape(1, 60, 1)
 
     # Dự báo tương lai với ARIMA
     arima_forecast_10 = arima_model.predict(n_periods=forecast_len)

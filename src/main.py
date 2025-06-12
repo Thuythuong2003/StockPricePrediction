@@ -134,7 +134,7 @@ with tab2:
     st.header("📈 Dự đoán giá cổ phiếu")
 
     st.markdown("### Chọn mô hình")
-    model = st.selectbox("Chọn mô hình", ["NODE", "ARIMA", "ARIMA-GRU", "LSTM", "LSTM-ARO", "GRU"])
+    model = st.selectbox("Chọn mô hình", ["NODE", "ARIMA-GRU", "LSTM", "LSTM-ARO", "GRU"])
     forecast_btn = st.button("Predict")
 
     # --- Xử lý khi bấm Forecast ---
@@ -162,17 +162,6 @@ with tab2:
 
                 st.session_state.predicted_values = forecast_node(node_model, scaler, test_scaled)
                 rmse, mae, predict_test_price, actual_test_price = evaluate_node(node_model, x_test, y_test, scaler)
-            
-            elif model == 'ARIMA':
-                with st.spinner("🔄 Đang chạy mô hình ARIMA..."):
-                    with open(f'../model/ARIMA-{ticker}.pkl', 'rb') as f:
-                        arima_model = pickle.load(f)
-
-                p, d, q = arima_model.order
-                with st.expander("📋 Tham số mô hình ARIMA"):
-                    st.write(f"**ARIMA order:** (p={p}, d={d}, q={q})")
-
-                rmse, mae, predict_test_price, actual_test_price = evaluate_arima(arima_model, test)
 
             elif model == 'ARIMA-GRU':
                 gru_model = load_model(f'../model/GRU-{ticker}.h5', custom_objects={'mse': 'mean_squared_error'})
@@ -181,15 +170,18 @@ with tab2:
 
                 with st.expander("📋 Cấu trúc mô hình GRU"):
                     for layer in gru_model.layers:
-                        st.write(f"{layer.__class__.__name__} layer:")
-                        if hasattr(layer, 'units'):
-                            st.write(f"Units: {layer.units}")
+                        if 'GRU' in layer.__class__.__name__:
+                            st.write(f"{layer.__class__.__name__} layer: | Units: `{layer.units}`")
+                        elif 'Dropout' in layer.__class__.__name__:
+                            st.write(f"Dropout layer: | Rate: `{layer.rate}`")
+                        elif 'Dense' in layer.__class__.__name__:
+                            st.write(f"Dense layer: | Units: `{layer.units}`")
 
                 p, d, q = arima_model.order
                 with st.expander("📋 Tham số mô hình ARIMA"):
                     st.write(f"**ARIMA order:** (p={p}, d={d}, q={q})")
 
-                predicted_values = forecast_arima_gru(
+                st.session_state.predicted_values = forecast_arima_gru(
                     gru_model=gru_model,
                     arima_model=arima_model,
                     x_test=x_test,
@@ -222,7 +214,7 @@ with tab2:
             st.stop()
 
         # Hiển thị kết quả dự báo nếu thành công
-        if st.session_state.predicted_values is not None and model != 'ARIMA':
+        if st.session_state.predicted_values is not None:
             forecast_dates = pd.date_range(start=data['Datetime'].iloc[-1] + timedelta(days=1), periods=10, freq=BDay())
             forecast_df = pd.DataFrame({
                 'Date': forecast_dates,
@@ -255,21 +247,4 @@ with tab2:
             next_day_price = forecast_df['Predict_Close'].iloc[0]
             st.metric("📌 Giá ngày tiếp theo", f"{next_day_price:.2f}")
 
-        elif st.session_state.predicted_values is not None and model == 'ARIMA':
-
-                
-            compare_df = pd.DataFrame({
-                'Actual Prices': actual_test_price.values,
-                'Predicted Prices': predict_test_price.values
-            }, index=range(len(test)))
-            compare_df.index.name = "Ngày"
-            compare_df_long = compare_df.reset_index().melt(id_vars='Ngày',value_vars=['Actual Prices', 'Predicted Prices'],
-                                                            var_name='Price',value_name='Giá dự đoán')
-
-            st.write(f"RMSE: {rmse:.4f}")
-            st.write(f"MAE: {mae:.4f}")
-
-
-            fig_compare = px.line(compare_df_long,x='Ngày', y='Giá dự đoán', color='Price', title="📈 So sánh giá thực tế và giá dự đoán", color_discrete_map={'Actual Prices': 'blue','Predicted Prices': 'orange'})
-            fig_compare.update_layout(xaxis_title='Ngày', yaxis_title='Giá dự đoán')
-            st.plotly_chart(fig_compare, use_container_width=True)
+        
