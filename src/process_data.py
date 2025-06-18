@@ -98,6 +98,8 @@ def add_technical_indicators(data):
     # MACD
     macd = ta.trend.macd(data['close'])
     data['MACD'] = macd
+    data['Signal'] = data['MACD'].ewm(span=9, adjust=False).mean()
+    data['Histogram'] = data['MACD'] - data['Signal']
     # RSI
     data['RSI'] = ta.momentum.rsi(data['close'], window=14)
 

@@ -88,6 +88,8 @@ with tab1:
         # MACD
         if 'MACD' in data.columns:
             fig.add_trace(go.Scatter(x=data['Datetime'], y=data['MACD'], name='MACD'), row=4, col=1)
+            fig.add_trace(go.Scatter(x=data['Datetime'], y=data['Signal'], name='Signal'), row=4, col=1)
+            fig.add_trace(go.Bar(x=data['Datetime'], y=data['Histogram'], name='Histogram'), row=4, col=1)
 
         # RSI
         if 'RSI' in data.columns:
